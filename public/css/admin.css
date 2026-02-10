@@ -31,6 +31,8 @@ body{
   color: var(--text);
 }
 
+img{max-width:100%;height:auto;display:block}
+
 /* ====== LAYOUT ====== */
 .admin-shell{
   display:flex;
@@ -104,7 +106,6 @@ body{
 }
 
 .admin-sidebar{
-  width: 270px;
   padding: 16px;
   color: #e5e7eb;
   background: linear-gradient(180deg, var(--sidebar), var(--sidebar-2));
@@ -606,4 +607,154 @@ tbody tr:hover{
   border-top: 1px solid rgba(15,23,42,.06);
 }
 
+/* =========================================================
+   ALIASES: tu HTML actual (admin-brand/sidebar-link/etc.)
+   Esto hace que NO tengas que cambiar tu Blade.
+   ========================================================= */
 
+/* Brand */
+.admin-brand{
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
+  display:block;
+  color: inherit;
+  text-decoration:none;
+}
+.brand-left{ display:flex; padding: 10px; align-items:center; justify-content:space-between; gap:10px; }
+.brand-left > div{ min-width:0; }
+.brand-title{ font-weight:900; letter-spacing:.2px; }
+.p-muted{ color: rgba(229,231,235,.75); font-weight:700; font-size: 12px; }
+.brand-pill{
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.92);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  white-space: nowrap;
+}
+.brand-dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.95);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+}
+
+/* Logo en el brand */
+.admin-brand img{
+  height: 52px;
+  width:auto;
+  filter: drop-shadow(0 10px 12px rgba(0,0,0,.20));
+}
+
+/* Nav */
+.sidebar-nav{
+  margin-top: 14px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.sidebar-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  color: rgba(255,255,255,.88);
+  border: 1px solid transparent;
+  text-decoration:none;
+  transition: background .12s ease, transform .12s ease, border-color .12s ease;
+  position: relative;
+}
+.sidebar-link:hover{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.07);
+  transform: translateY(-1px);
+}
+.sidebar-link.active{
+  background: rgba(79,70,229,.18);
+  border-color: rgba(79,70,229,.35);
+}
+.sidebar-link .left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.sidebar-ico{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.10);
+  flex: 0 0 auto;
+}
+.sidebar-link .label{
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Badge de mensajes no leídos */
+.sidebar-badge{
+  margin-left:auto;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 8px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius: 999px;
+  background: rgba(245,158,11,.95);
+  color: #111827;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+/* Footer sidebar (logout) */
+.sidebar-footer{
+  position:absolute;
+  left:16px; right:16px; bottom:16px;
+}
+.btn-logout{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  cursor:pointer;
+  font-weight: 900;
+}
+.btn-logout:hover{ background: rgba(255,255,255,.10); transform: translateY(-1px); }
+.btn-logout:active{ transform: translateY(0); }
+
+/* Topbar title/sub de tu HTML */
+.topbar-title{
+  font-weight: 950;
+  font-size: 14px;
+}
+.topbar-sub{
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.topbar-right{ display:flex; align-items:center; gap:10px; }

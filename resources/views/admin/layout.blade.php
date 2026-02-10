@@ -66,7 +66,7 @@
            class="sidebar-link {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
           <span class="left">
             <span class="sidebar-ico">📩</span>
-            <span class="label">Bandeja de mensajes</span>
+            <span class="label">Mensajes</span>
           </span>
 
           @if(!empty($adminUnreadMessages))
