@@ -8,63 +8,80 @@
 </head>
 <body>
 
-  <div class="admin-shell" id="adminShell">
+  <div class="admin-shell">
 
     {{-- SIDEBAR --}}
-    <aside class="admin-sidebar" id="adminSidebar">
-      <div class="sb-brand">
-        <div class="sb-brand__top">
-          <div class="sb-brand__title">Portal Admin</div>
-          <span class="sb-role">{{ auth()->user()->role }}</span>
+    <aside class="admin-sidebar">
+
+      <a class="admin-brand" href="{{ route('admin.dashboard') }}">
+        <div class="brand-left">
+          <img src="{{ asset('img/brand/insan.PNG') }}" alt="Insan Consultores">
+          <div>
+            <div class="brand-title">Insan Consultores</div>
+            <div class="p-muted" style="margin:2px 0 0;">Portal Admin</div>
+          </div>
         </div>
 
-        <a class="sb-logo" href="{{ route('admin.dashboard') }}">
-          <img src="{{ asset('img/brand/insan.PNG') }}" alt="Insan Consultores">
-        </a>
-      </div>
+        <span class="brand-pill">
+          <span class="brand-dot"></span>
+          {{ auth()->user()->role }}
+        </span>
+      </a>
 
-      <nav class="sb-nav">
+      <nav class="sidebar-nav">
 
         <a href="{{ route('admin.dashboard') }}"
-           class="sb-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-          <span class="sb-ico">🏠</span>
-          <span class="sb-text">Dashboard</span>
+           class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">🏠</span>
+            <span class="label">Dashboard</span>
+          </span>
         </a>
 
         <a href="{{ route('admin.users.index') }}"
-           class="sb-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-          <span class="sb-ico">👥</span>
-          <span class="sb-text">Usuarios</span>
+           class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">👤</span>
+            <span class="label">Usuarios</span>
+          </span>
         </a>
 
         <a href="{{ route('admin.banners.index') }}"
-           class="sb-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
-          <span class="sb-ico">🖼️</span>
-          <span class="sb-text">Banners</span>
+           class="sidebar-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">🖼️</span>
+            <span class="label">Banners</span>
+          </span>
         </a>
 
         <a href="{{ route('admin.services.index') }}"
-           class="sb-link {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
-          <span class="sb-ico">🧩</span>
-          <span class="sb-text">Servicios</span>
+           class="sidebar-link {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">🧩</span>
+            <span class="label">Servicios</span>
+          </span>
         </a>
 
         <a href="{{ route('admin.messages.index') }}"
-           class="sb-link {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
-          <span class="sb-ico">📩</span>
-          <span class="sb-text">Bandeja de mensajes</span>
+           class="sidebar-link {{ request()->routeIs('admin.messages.*') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">📩</span>
+            <span class="label">Bandeja de mensajes</span>
+          </span>
 
           @if(!empty($adminUnreadMessages))
-            <span class="sb-badge">{{ $adminUnreadMessages }}</span>
+            <span class="sidebar-badge">{{ $adminUnreadMessages }}</span>
           @endif
         </a>
 
       </nav>
 
-      <div class="sb-footer">
+      <div class="sidebar-footer">
         <form method="POST" action="{{ route('logout') }}">
           @csrf
-          <button type="submit" class="btn btn-ghost w-100">Salir</button>
+          <button type="submit" class="btn-logout">
+            <span>🚪</span> Salir
+          </button>
         </form>
       </div>
     </aside>
@@ -72,37 +89,29 @@
     {{-- MAIN --}}
     <main class="admin-main">
 
-      {{-- TOPBAR --}}
-      <header class="admin-topbar">
-        <div class="tb-left">
-          <button class="tb-burger" type="button" aria-label="Menu" id="btnSidebar">☰</button>
-
-          <div class="tb-search">
-            <span class="tb-search__ico">🔎</span>
-            <input type="text" placeholder="Search..." aria-label="Buscar">
-          </div>
+      <div class="admin-topbar">
+        <div>
+          <div class="topbar-title">Panel de administración</div>
+          <div class="topbar-sub">{{ auth()->user()->name }}</div>
         </div>
 
-        <div class="tb-right">
-          <div class="tb-user">
-            <div class="tb-user__name">{{ auth()->user()->name }}</div>
-            <div class="tb-user__role">Admin</div>
-          </div>
+        <div class="topbar-right">
+          <span class="badge blue">Rol: {{ auth()->user()->role }}</span>
         </div>
-      </header>
+      </div>
 
-      {{-- ALERTAS GLOBALES (tus sesiones actuales ok/err) --}}
-      @if (session('ok'))
+      {{-- ALERTAS --}}
+      @if(session('success'))
         <div class="alert alert-success">
           <div class="alert-ico">✅</div>
-          <div><strong>Éxito:</strong> {{ session('ok') }}</div>
+          <div><strong>Éxito:</strong> {{ session('success') }}</div>
         </div>
       @endif
 
-      @if (session('err'))
+      @if(session('error'))
         <div class="alert alert-danger">
           <div class="alert-ico">⚠️</div>
-          <div><strong>Error:</strong> {{ session('err') }}</div>
+          <div><strong>Error:</strong> {{ session('error') }}</div>
         </div>
       @endif
 
@@ -111,7 +120,7 @@
           <div class="alert-ico">⚠️</div>
           <div>
             <strong>Revisa los campos:</strong>
-            <ul class="alert-list">
+            <ul style="margin:8px 0 0; padding-left:18px;">
               @foreach ($errors->all() as $e)
                 <li>{{ $e }}</li>
               @endforeach
@@ -120,10 +129,9 @@
         </div>
       @endif
 
-      {{-- CONTENT --}}
-      <section class="admin-content">
+      <div class="card pad">
         @yield('content')
-      </section>
+      </div>
 
     </main>
 

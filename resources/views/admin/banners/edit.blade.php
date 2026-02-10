@@ -1,22 +1,27 @@
 @extends('admin.layout')
 
+@section('page_title', 'Banners')
+@section('page_subtitle', 'Editar banner')
+
 @section('content')
 
-<div class="card pad">
+<div class="page-card">
   <div class="page-head">
     <div>
       <h1 class="page-title">Editar banner #{{ $banner->id }}</h1>
-      <p class="page-subtitle">Actualiza información del banner.</p>
+      <p class="page-subtitle">Actualiza el banner. Si está inactivo, su posición se ignora.</p>
     </div>
 
     <a class="btn btn-ghost" href="{{ route('admin.banners.index') }}">← Volver</a>
   </div>
 
+  <div class="divider"></div>
+
   <form method="POST" action="{{ route('admin.banners.update', $banner) }}" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 
-    <div style="display:grid; gap:12px; grid-template-columns: 1.4fr 1fr;">
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr 220px 260px;">
       <div class="field">
         <label>Nombre</label>
         <input class="input" name="name" value="{{ old('name', $banner->name) }}" required>
@@ -26,7 +31,7 @@
         <label>Imagen (opcional)</label>
         <input class="input" type="file" name="image" accept=".png,.jpg,.jpeg">
         <div class="help">
-          Actual: <a href="{{ asset('storage/'.$banner->image_path) }}" target="_blank">Ver</a>
+          Actual: <a target="_blank" href="{{ asset('storage/'.$banner->image_path) }}">Ver</a>
         </div>
       </div>
 

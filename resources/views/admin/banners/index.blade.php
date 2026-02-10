@@ -1,136 +1,121 @@
 @extends('admin.layout')
 
+@section('page_title', 'Banners')
+@section('page_subtitle', 'Gestiona banners del carrusel. Solo los activos tienen posición.')
+
 @section('content')
 
 <div class="card pad">
   <div class="page-head">
     <div>
-      <h1 class="page-title">Banners</h1>
-      <p class="page-subtitle">Gestiona banners del carrusel. Solo los activos tienen posición.</p>
+      <h1 class="h1">Banners</h1>
+      <p class="p-muted">Gestiona banners del carrusel. Solo los activos tienen posición.</p>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+        <span class="badge blue">Activos: {{ $active->count() }}</span>
+        <span class="badge yellow">Inactivos: {{ $inactive->count() }}</span>
+      </div>
     </div>
 
-    <a class="btn btn-primary" href="{{ route('admin.banners.create') }}">+ Nuevo banner</a>
+    <a class="btn btn-primary" href="{{ route('admin.banners.create') }}">➕ Nuevo banner</a>
   </div>
+</div>
 
-  <h3 style="margin: 6px 0 10px; font-weight:900;">Activos</h3>
-  <div class="table-wrap">
+<div style="height:14px;"></div>
+
+<div class="card pad">
+  <h2 style="margin:0; font-size:16px; font-weight:950;">Activos</h2>
+  <p class="p-muted" style="margin-top:6px;">Se muestran en el carrusel según su posición.</p>
+
+  <div class="table-wrap" style="margin-top:12px;">
     <table>
       <thead>
         <tr>
-          <th>Posición</th>
+          <th style="width:120px;">Posición</th>
           <th>Nombre</th>
-          <th>Imagen</th>
-          <th>Estado</th>
+          <th style="width:160px;">Imagen</th>
+          <th style="width:120px;">Estado</th>
           <th style="width:260px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
         @forelse($active as $b)
           <tr>
-            <td>{{ $b->position }}</td>
+            <td><span class="badge yellow">#{{ $b->position }}</span></td>
             <td style="font-weight:900;">{{ $b->name }}</td>
             <td>
-              <a class="btn btn-ghost" href="{{ asset('storage/'.$b->image_path) }}" target="_blank">Ver</a>
+              <a class="btn btn-ghost" target="_blank" href="{{ asset('storage/'.$b->image_path) }}">Ver</a>
             </td>
             <td><span class="badge blue">Activo</span></td>
-            <td>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <a class="btn btn-ghost" href="{{ route('admin.banners.edit', $b) }}">Editar</a>
+            <td style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn btn-ghost" href="{{ route('admin.banners.edit', $b) }}">Editar</a>
 
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  onclick="__confirmDelete({
-                    action: '{{ route('admin.banners.destroy', $b) }}',
-                    name: '{{ addslashes($b->name) }}'
-                  })"
-                >
-                  Eliminar
-                </button>
-              </div>
+              <form method="POST" action="{{ route('admin.banners.destroy', $b) }}"
+                    onsubmit="return confirm('¿Eliminar este banner?');">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
             </td>
           </tr>
         @empty
-          <tr><td colspan="5" style="color:var(--muted);">No hay banners activos.</td></tr>
+          <tr>
+            <td colspan="5" style="padding:18px; color:var(--muted);">
+              No hay banners activos.
+            </td>
+          </tr>
         @endforelse
       </tbody>
     </table>
   </div>
+</div>
 
-  <div style="height:14px;"></div>
+<div style="height:14px;"></div>
 
-  <h3 style="margin: 6px 0 10px; font-weight:900;">Inactivos</h3>
-  <div class="table-wrap">
+<div class="card pad">
+  <h2 style="margin:0; font-size:16px; font-weight:950;">Inactivos</h2>
+  <p class="p-muted" style="margin-top:6px;">No se muestran en el carrusel (no tienen posición efectiva).</p>
+
+  <div class="table-wrap" style="margin-top:12px;">
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th style="width:90px;">ID</th>
           <th>Nombre</th>
-          <th>Imagen</th>
-          <th>Estado</th>
+          <th style="width:160px;">Imagen</th>
+          <th style="width:120px;">Estado</th>
           <th style="width:260px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
         @forelse($inactive as $b)
           <tr>
-            <td>{{ $b->id }}</td>
+            <td><span class="badge gray">#{{ $b->id }}</span></td>
             <td style="font-weight:900;">{{ $b->name }}</td>
             <td>
-              <a class="btn btn-ghost" href="{{ asset('storage/'.$b->image_path) }}" target="_blank">Ver</a>
+              <a class="btn btn-ghost" target="_blank" href="{{ asset('storage/'.$b->image_path) }}">Ver</a>
             </td>
             <td><span class="badge gray">Inactivo</span></td>
-            <td>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <a class="btn btn-ghost" href="{{ route('admin.banners.edit', $b) }}">Editar</a>
+            <td style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn btn-ghost" href="{{ route('admin.banners.edit', $b) }}">Editar</a>
 
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  onclick="__confirmDelete({
-                    action: '{{ route('admin.banners.destroy', $b) }}',
-                    name: '{{ addslashes($b->name) }}'
-                  })"
-                >
-                  Eliminar
-                </button>
-              </div>
+              <form method="POST" action="{{ route('admin.banners.destroy', $b) }}"
+                    onsubmit="return confirm('¿Eliminar este banner?');">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
             </td>
           </tr>
         @empty
-          <tr><td colspan="5" style="color:var(--muted);">No hay banners inactivos.</td></tr>
+          <tr>
+            <td colspan="5" style="padding:18px; color:var(--muted);">
+              No hay banners inactivos.
+            </td>
+          </tr>
         @endforelse
       </tbody>
     </table>
-  </div>
-
-</div>
-
-{{-- Modal confirm (reutilizable) --}}
-<div id="confirmModal" class="modal" aria-hidden="true">
-  <div class="modal__backdrop" data-close="1"></div>
-
-  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="modal__head">
-      <div class="modal__title" id="confirmTitle">🗑️ Confirmar eliminación</div>
-      <button class="modal__close" type="button" data-close="1">✕</button>
-    </div>
-
-    <div class="modal__body">
-      ¿Seguro que deseas eliminar <strong id="confirmName">---</strong>?
-      <div style="color:var(--muted); font-size:12px; margin-top:8px;">
-        Esta acción no se puede deshacer.
-      </div>
-    </div>
-
-    <div class="modal__actions">
-      <button class="btn btn-ghost" type="button" data-close="1">Cancelar</button>
-      <form id="confirmForm" method="POST" action="#">
-        @csrf
-        @method('DELETE')
-        <button class="btn btn-danger" type="submit">Eliminar</button>
-      </form>
-    </div>
   </div>
 </div>
 
