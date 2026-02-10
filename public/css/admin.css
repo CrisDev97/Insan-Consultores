@@ -38,6 +38,71 @@ body{
 }
 
 /* ====== SIDEBAR ====== */
+
+/* ====== RESPONSIVE / toggle sidebar ====== */
+@media (max-width: 980px){
+  .tb-search{ min-width: 220px; }
+}
+
+@media (max-width: 860px){
+  .admin-shell{ flex-direction: column; }
+  .admin-sidebar{
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    transform: translateX(-110%);
+    transition: transform .18s ease;
+    z-index: 9998;
+  }
+  .admin-shell.sidebar-open .admin-sidebar{
+    transform: translateX(0);
+  }
+  .sb-footer{ position: static; margin-top: 12px; }
+  table{ min-width: 720px; }
+}
+
+/* ===== Extras para tus vistas (page-card / fields) ===== */
+.page-card{
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  padding: 18px;
+}
+
+.page-title{
+  margin:0;
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: -.3px;
+}
+
+.page-subtitle{
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field label{ font-weight:900; font-size:12px; color:var(--muted); }
+.help{ font-size:12px; color:var(--muted); margin-top:4px; }
+
+.divider{
+  height: 1px;
+  background: rgba(17,24,39,.08);
+  margin: 14px 0;
+}
+
+.form-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+
 .admin-sidebar{
   width: 270px;
   padding: 16px;
@@ -541,25 +606,4 @@ tbody tr:hover{
   border-top: 1px solid rgba(15,23,42,.06);
 }
 
-/* ====== RESPONSIVE / toggle sidebar ====== */
-@media (max-width: 980px){
-  .tb-search{ min-width: 220px; }
-}
 
-@media (max-width: 860px){
-  .admin-shell{ flex-direction: column; }
-  .admin-sidebar{
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    transform: translateX(-110%);
-    transition: transform .18s ease;
-    z-index: 9998;
-  }
-  .admin-shell.sidebar-open .admin-sidebar{
-    transform: translateX(0);
-  }
-  .sb-footer{ position: static; margin-top: 12px; }
-  table{ min-width: 720px; }
-}
