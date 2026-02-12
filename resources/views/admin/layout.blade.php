@@ -74,6 +74,23 @@
           @endif
         </a>
 
+        <a href="{{ route('admin.advisors.index') }}" class="sidebar-link {{ request()->routeIs('admin.advisors.*') ? 'active' : '' }}">
+          <span class="left">
+            <span class="sidebar-ico">🧑‍🏫</span>
+            <span class="label">Asesores</span>
+          </span>
+        </a>
+
+        @if (Route::has('admin.events.index'))
+          <a href="{{ route('admin.events.index') }}"
+            class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
+            <span class="left">
+              <span class="sidebar-ico">📅</span>
+              <span class="label">Eventos</span>
+            </span>
+          </a>
+        @endif
+
       </nav>
 
       <div class="sidebar-footer">

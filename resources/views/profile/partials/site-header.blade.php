@@ -11,7 +11,7 @@
       <a href="#nosotros">Nosotros</a>
       <a href="#servicios">Servicios</a>
       <a href="#clientes">Clientes</a>
-      <a href="#plataforma">Plataforma Virtual</a>
+      <a href="{{ route('login') }}">Plataforma Virtual</a>
       <a href="#contacto" class="is-cta">Contacto</a>
     </nav>
   </div>

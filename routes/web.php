@@ -1,15 +1,22 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
+
+use App\Http\Controllers\Site\HomeController;
+use App\Http\Controllers\Site\ContactController;
+
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Site\HomeController;
-use \App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Site\ContactController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ContactMessageController;
-use App\Http\Controllers\Student\AuthController as StudentAuthController;
-use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
+
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+
+use App\Http\Controllers\Student\AgendaController;
+use App\Http\Controllers\Admin\AdvisorController;
+use App\Http\Controllers\Admin\AdvisorAvailabilityController;
+use \App\Http\Controllers\Admin\AdvisorEventController;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
@@ -18,13 +25,16 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// ✅ BLOQUE QUE TE FALTA (Breeze lo necesita)
+// Breeze lo necesita
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// ===============================
+// ADMIN (protegido)
+// ===============================
 Route::middleware(['auth', 'role:administrador'])
     ->prefix('admin')
     ->as('admin.')
@@ -35,28 +45,42 @@ Route::middleware(['auth', 'role:administrador'])
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('banners', BannerController::class)->except(['show']);
         Route::resource('services', ServiceController::class)->except(['show']);
+        Route::resource('events', AdvisorEventController::class)->except(['show']);
+
         Route::get('messages', [ContactMessageController::class, 'index'])->name('messages.index');
         Route::get('messages/{message}', [ContactMessageController::class, 'show'])->name('messages.show');
         Route::patch('messages/{message}/toggle-read', [ContactMessageController::class, 'toggleRead'])->name('messages.toggleRead');
         Route::patch('messages/{message}/toggle-contacted', [ContactMessageController::class, 'toggleContacted'])->name('messages.toggleContacted');
         Route::delete('messages/{message}', [ContactMessageController::class, 'destroy'])->name('messages.destroy');
         Route::patch('messages/mark-all-read', [ContactMessageController::class, 'markAllRead'])->name('messages.markAllRead');
-
+        Route::resource('advisors', AdvisorController::class)->except(['show']);
+        Route::get('advisors/{advisor}/availability', [AdvisorAvailabilityController::class, 'edit'])->name('advisors.availability.edit');
+        Route::post('advisors/{advisor}/availability', [AdvisorAvailabilityController::class, 'update'])->name('advisors.availability.update');
+        
     });
 
-Route::prefix('plataforma')->name('student.')->group(function () {
+// ===============================
+// ESTUDIANTE (protegido)
+// ===============================
+Route::middleware(['auth', 'role:estudiante'])
+    ->prefix('plataforma')
+    ->as('student.')
+    ->group(function () {
 
-    // Login estudiante
-    Route::get('/login', [StudentAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [StudentAuthController::class, 'login'])->name('login.post');
+        Route::view('/', 'student.dashboard')->name('dashboard');
 
-    // Logout estudiante
-    Route::post('/logout', [StudentAuthController::class, 'logout'])->name('logout');
+        // AGENDA
+        Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda');
+        Route::get('/agenda/advisors', [AgendaController::class, 'advisors'])->name('agenda.advisors');
+        Route::get('/agenda/slots', [AgendaController::class, 'slots'])->name('agenda.slots');
+        Route::post('/agenda/book', [AgendaController::class, 'book'])->name('agenda.book');
 
-    // Plataforma (protegida)
-    Route::middleware(['auth', 'role:estudiante'])->group(function () {
-        Route::get('/', [StudentDashboardController::class, 'index'])->name('dashboard');
+        // OTRAS SECCIONES
+        Route::view('/mis-citas', 'student.appointments')->name('appointments');
+        Route::view('/servicios', 'student.services')->name('services');
+        Route::view('/perfil', 'student.profile')->name('profile');
+
+        Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     });
-});
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
