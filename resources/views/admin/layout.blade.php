@@ -17,15 +17,15 @@
         <div class="brand-left">
           <img src="{{ asset('img/brand/insan.PNG') }}" alt="Insan Consultores">
           <div>
-            <div class="brand-title">Insan Consultores</div>
-            <div class="p-muted" style="margin:2px 0 0;">Portal Admin</div>
+            <!--<div class="brand-title">Insan Consultores</div>-->
+            <!--<div class="p-muted" style="margin:2px 0 0;">Portal Admin</div>-->
           </div>
         </div>
 
-        <span class="brand-pill">
+        <!--<span class="brand-pill">
           <span class="brand-dot"></span>
           {{ auth()->user()->role }}
-        </span>
+        </span>-->
       </a>
 
       <nav class="sidebar-nav">
