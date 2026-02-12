@@ -24,7 +24,7 @@
 
       <div class="field">
         <label>Sesiones</label>
-        <input class="input" type="number" name="sessions" value="{{ old('sessions', $service->sessions) }}">
+        <input class="input" type="number" name="sessions" value="{{ old('sessions', $service->sessions_count) }}">
       </div>
 
       <div class="field">
@@ -52,12 +52,12 @@
 
       <div class="field" style="grid-column: 1 / -1;">
         <label>Lo que incluye / implica (1 ítem por línea)</label>
-        <textarea class="input" name="includes" rows="4">{{ old('includes', $service->includes) }}</textarea>
+        <textarea class="input" name="includes" rows="5">{{ old('includes', implode("\n", $service->includes ?? [])) }}</textarea>
       </div>
 
       <div class="field" style="grid-column: 1 / -1;">
         <label>Objetivos (1 ítem por línea)</label>
-        <textarea class="input" name="objectives" rows="4">{{ old('objectives', $service->objectives) }}</textarea>
+        <textarea class="input" name="objectives" rows="5">{{ old('objectives', implode("\n", $service->objectives ?? [])) }}</textarea>
       </div>
 
       <div class="field">
