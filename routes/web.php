@@ -74,6 +74,7 @@ Route::middleware(['auth', 'role:estudiante'])
         Route::get('/agenda/advisors', [AgendaController::class, 'advisors'])->name('agenda.advisors');
         Route::get('/agenda/slots', [AgendaController::class, 'slots'])->name('agenda.slots');
         Route::post('/agenda/book', [AgendaController::class, 'book'])->name('agenda.book');
+        Route::get('/agenda/feed', [\App\Http\Controllers\Student\AgendaController::class, 'feed'])->name('agenda.feed');
 
         // OTRAS SECCIONES
         Route::view('/mis-citas', 'student.appointments')->name('appointments');

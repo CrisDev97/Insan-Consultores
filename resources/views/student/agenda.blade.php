@@ -39,18 +39,26 @@
         </div>
       </div>
 
-      {{-- Slots --}}
+      {{-- Calendario --}}
       <div class="bg-white border border-slate-200 rounded-xl p-5">
         <div class="flex items-center justify-between mb-4">
-          <div class="font-semibold">2) Horarios disponibles</div>
-          <div id="slots_hint" class="text-sm text-slate-500">Selecciona servicio, asesor y día</div>
+          <div class="font-semibold">2) Agenda (Semana)</div>
+
+          <div class="flex gap-2 text-xs">
+            <span class="px-3 py-1 rounded-full" style="background:#DCFCE7;border:1px solid #22C55E;">Disponible</span>
+            <span class="px-3 py-1 rounded-full" style="background:#FEE2E2;border:1px solid #EF4444;">Reservado</span>
+            <span class="px-3 py-1 rounded-full" style="background:#DBEAFE;border:1px solid #3B82F6;">Evento</span>
+          </div>
         </div>
 
-        <div id="slots" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="text-slate-500 text-sm">Aún no hay datos.</div>
+        <div id="studentCalendar"></div>
+
+        <div class="mt-3 text-sm text-slate-500">
+          Selecciona <b>Servicio</b> y <b>Asesor</b> para cargar la agenda.
+          Haz clic en un bloque <span class="font-medium" style="color:#14532D;">Disponible</span> para reservar.
         </div>
       </div>
-    </div>
+
 
     {{-- Panel reserva --}}
     <div>
@@ -92,6 +100,7 @@
   </div>
 
   @push('scripts')
+  @vite(['resources/js/student-calendar.js'])
   <script>
     const serviceSelect = document.getElementById('service_id');
     const advisorSelect = document.getElementById('advisor_id');
@@ -113,7 +122,12 @@
     const btnBook = document.getElementById('btnBook');
 
     function resetSlots() {
-      slotsBox.innerHTML = `<div class="text-slate-500 text-sm">Sin horarios. Selecciona servicio, asesor y día.</div>`;
+      if (slotsBox) {
+        slotsBox.innerHTML = `<div class="text-slate-500 text-sm">Sin horarios.</div>`;
+      }
+      if (slotsHint) {
+        slotsHint.textContent = '';
+      }
       dTime.textContent = '—';
       fStarts.value = '';
       fEnds.value = '';
@@ -177,18 +191,36 @@
       slots.forEach(s => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition';
-        btn.innerHTML = `<div class="font-medium">${s.label}</div><div class="text-xs text-slate-500">${date}</div>`;
-        btn.onclick = () => {
-          dTime.textContent = `${date} | ${s.label}`;
-          fStarts.value = s.starts_at;
-          fEnds.value = s.ends_at;
 
-          // habilitar reservar si también eligió sesión
-          btnBook.disabled = !(sessionSelect.value && fStarts.value && fEnds.value);
-        };
+        const isBlocked = !!s.blocked;
+
+        btn.className = isBlocked
+          ? 'text-left px-4 py-3 rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed'
+          : 'text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition';
+
+        btn.disabled = isBlocked;
+
+        const sub = isBlocked && s.reason ? `<div class="text-xs text-rose-600 mt-1">${s.reason}</div>` : '';
+
+        btn.innerHTML = `
+          <div class="font-medium">${s.label}</div>
+          <div class="text-xs text-slate-500">${date}</div>
+          ${sub}
+        `;
+
+        if (!isBlocked) {
+          btn.onclick = () => {
+            dTime.textContent = `${date} | ${s.label}`;
+            fStarts.value = s.starts_at;
+            fEnds.value = s.ends_at;
+
+            btnBook.disabled = !(sessionSelect.value && fStarts.value && fEnds.value);
+          };
+        }
+
         slotsBox.appendChild(btn);
       });
+
     }
 
     serviceSelect.addEventListener('change', async () => {
