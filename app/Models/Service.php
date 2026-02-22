@@ -26,4 +26,10 @@ class Service extends Model
         'sessions_count' => 'integer',
         'price' => 'decimal:2',
     ];
+
+    public function sessions()
+    {
+        return $this->hasMany(\App\Models\ServiceSession::class)->orderBy('session_number');
+    }
+
 }

@@ -7,6 +7,7 @@ use App\Models\Advisor;
 use App\Models\AdvisorEvent;
 use App\Models\Appointment;
 use App\Models\Service;
+use App\Models\ServiceSession;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
@@ -41,7 +42,38 @@ class AgendaController extends Controller
         return response()->json($advisors);
     }
 
-    // genera slots por día según disponibilidad y citas existentes
+    // ✅ devuelve lista de sesiones del servicio con su duración
+    public function sessions(Request $request)
+    {
+        $serviceId = (int) $request->query('service_id');
+        if (!$serviceId) return response()->json([], 422);
+
+        $service = Service::find($serviceId);
+        if (!$service) return response()->json([], 404);
+
+        $count = (int) ($service->sessions_count ?? 0);
+        if ($count <= 0) return response()->json([]);
+
+        // Busca duraciones configuradas
+        $rows = ServiceSession::query()
+            ->where('service_id', $serviceId)
+            ->orderBy('session_number')
+            ->get(['session_number','duration_minutes'])
+            ->keyBy('session_number');
+
+        // Siempre devolvemos 1..N
+        $out = [];
+        for ($i=1; $i <= $count; $i++) {
+            $out[] = [
+                'session_number' => $i,
+                'minutes' => (int) ($rows[$i]->duration_minutes ?? 60), // fallback 60
+            ];
+        }
+
+        return response()->json($out);
+    }
+
+    // genera slots por día según disponibilidad y citas existentes (tu endpoint viejo)
     public function slots(Request $request)
     {
         $serviceId = (int) $request->query('service_id');
@@ -55,11 +87,11 @@ class AgendaController extends Controller
         $day = Carbon::createFromFormat('Y-m-d', $date)->startOfDay();
         $weekday = (int) $day->dayOfWeek; // 0=Sunday
 
-        // duración (desde pivote advisor_service)
-        $duration = (int) DB::table('advisor_service')
+        // duración (desde pivote advisor_service) - se queda como estaba
+        $duration = (int) (DB::table('advisor_service')
             ->where('advisor_id', $advisorId)
             ->where('service_id', $serviceId)
-            ->value('duration_minutes') ?? 60;
+            ->value('duration_minutes') ?? 60);
 
         // disponibilidad del día
         $ranges = DB::table('advisor_availabilities')
@@ -72,7 +104,7 @@ class AgendaController extends Controller
             return response()->json([]);
         }
 
-        // citas ocupadas del asesor ese día
+        // citas ocupadas
         $busy = Appointment::query()
             ->where('advisor_id', $advisorId)
             ->whereDate('starts_at', $day->toDateString())
@@ -84,13 +116,14 @@ class AgendaController extends Controller
             'end' => Carbon::parse($a->ends_at),
         ]);
 
+        // eventos del asesor
         $events = AdvisorEvent::query()
             ->where('advisor_id', $advisorId)
             ->where('is_active', 1)
             ->where('status', '!=', 'cancelled')
             ->where(function ($q) use ($day) {
                 $q->where('start_at', '<', $day->copy()->endOfDay())
-                ->where('end_at', '>', $day->copy()->startOfDay());
+                  ->where('end_at', '>', $day->copy()->startOfDay());
             })
             ->get(['start_at','end_at','title','type','visibility']);
 
@@ -102,7 +135,6 @@ class AgendaController extends Controller
                 : 'Ocupado',
         ]);
 
-
         $slots = [];
 
         foreach ($ranges as $r) {
@@ -110,44 +142,25 @@ class AgendaController extends Controller
             $start = Carbon::parse($day->toDateString().' '.$r->start_time);
             $end = Carbon::parse($day->toDateString().' '.$r->end_time);
 
-            // iterar en slots (ej 60 min)
-            for ($t = $start->copy(); $t->addMinutes(0)->lessThan($end); $t->addMinutes($slotMinutes)) {
+            for ($t = $start->copy(); $t->lt($end); $t->addMinutes($slotMinutes)) {
                 $slotStart = $t->copy();
                 $slotEnd = $t->copy()->addMinutes($duration);
 
-                // no pasar del rango
-                if ($slotEnd->greaterThan($end)) {
-                    continue;
-                }
-
-                // no permitir pasado
-                if ($slotStart->lessThanOrEqualTo(now())) {
-                    continue;
-                }
-
-                // verificar choque con busy
-                $overlaps = $busyIntervals->contains(function ($b) use ($slotStart, $slotEnd) {
-                    return $slotStart->lt($b['end']) && $slotEnd->gt($b['start']);
-                });
+                if ($slotEnd->gt($end)) continue;
+                if ($slotStart->lte(now())) continue;
 
                 $blockedReason = null;
 
-                // choque con citas
-                $overlapsAppointment = $busyIntervals->contains(function ($b) use ($slotStart, $slotEnd) {
-                    return $slotStart->lt($b['end']) && $slotEnd->gt($b['start']);
-                });
-                if ($overlapsAppointment) {
-                    $blockedReason = 'Reservado';
-                }
+                $overlapsAppointment = $busyIntervals->contains(fn($b) =>
+                    $slotStart->lt($b['end']) && $slotEnd->gt($b['start'])
+                );
+                if ($overlapsAppointment) $blockedReason = 'Reservado';
 
-                // choque con eventos (si aún no está bloqueado por cita)
                 if (!$blockedReason) {
-                    $eventHit = $eventIntervals->first(function ($e) use ($slotStart, $slotEnd) {
-                        return $slotStart->lt($e['end']) && $slotEnd->gt($e['start']);
-                    });
-                    if ($eventHit) {
-                        $blockedReason = $eventHit['reason'];
-                    }
+                    $eventHit = $eventIntervals->first(fn($e) =>
+                        $slotStart->lt($e['end']) && $slotEnd->gt($e['start'])
+                    );
+                    if ($eventHit) $blockedReason = $eventHit['reason'];
                 }
 
                 $slots[] = [
@@ -157,7 +170,6 @@ class AgendaController extends Controller
                     'blocked'   => (bool) $blockedReason,
                     'reason'    => $blockedReason,
                 ];
-
             }
         }
 
@@ -177,13 +189,11 @@ class AgendaController extends Controller
 
         $studentId = (int) $request->user()->id;
 
-        // validación sesión máxima (según servicio)
         $service = Service::findOrFail($data['service_id']);
         if ((int)$data['session_number'] > (int)$service->sessions_count) {
             return back()->with('error', 'Número de sesión inválido para este servicio.');
         }
 
-        // evitar reservar misma sesión dos veces
         $exists = Appointment::query()
             ->where('student_user_id', $studentId)
             ->where('service_id', $service->id)
@@ -195,7 +205,6 @@ class AgendaController extends Controller
             return back()->with('error', 'Ya tienes reservada esa sesión para este servicio.');
         }
 
-        // crear reserva si el slot sigue libre (bloqueo simple)
         try {
             DB::transaction(function () use ($data, $studentId) {
 
@@ -234,34 +243,39 @@ class AgendaController extends Controller
         return redirect()->route('student.agenda')->with('success', 'Sesión reservada correctamente.');
     }
 
+    // ✅ FEED para FullCalendar (vista semana)
     public function feed(Request $request)
     {
         $serviceId = (int) $request->query('service_id');
         $advisorId = (int) $request->query('advisor_id');
-        $start = $request->query('start'); // YYYY-MM-DD
-        $end   = $request->query('end');   // YYYY-MM-DD (FullCalendar lo manda como fin-exclusivo)
+        $sessionNumber = (int) $request->query('session_number');
 
-        if (!$serviceId || !$advisorId || !$start || !$end) {
+        $start = $request->query('start');
+        $end   = $request->query('end'); // fin-exclusivo
+
+        if (!$serviceId || !$advisorId || !$sessionNumber || !$start || !$end) {
             return response()->json([]);
         }
 
-        $startDate = Carbon::parse($start)->startOfDay();
-        $endDate   = Carbon::parse($end)->startOfDay(); // fin-exclusivo
-
-        // duración del servicio (pivot advisor_service)
-        $duration = (int) (DB::table('advisor_service')
-            ->where('advisor_id', $advisorId)
+        // duración real según sesión
+        $minutes = (int) (ServiceSession::query()
             ->where('service_id', $serviceId)
+            ->where('session_number', $sessionNumber)
             ->value('duration_minutes') ?? 60);
 
-        // Trae TODAS las disponibilidades del asesor (por weekday)
+        if ($minutes < 15 || $minutes > 480) {
+            return response()->json(['message' => 'Duración de sesión inválida'], 422);
+        }
+
+        $startDate = Carbon::parse($start)->startOfDay();
+        $endDate   = Carbon::parse($end)->startOfDay();
+
         $availabilities = DB::table('advisor_availabilities')
             ->where('advisor_id', $advisorId)
             ->where('is_active', 1)
             ->get(['weekday','start_time','end_time','slot_minutes'])
             ->groupBy('weekday');
 
-        // Citas del rango
         $appointments = Appointment::query()
             ->where('advisor_id', $advisorId)
             ->where('status', 'reserved')
@@ -274,7 +288,6 @@ class AgendaController extends Controller
             'end'   => Carbon::parse($a->ends_at),
         ]);
 
-        // Eventos del rango
         $events = AdvisorEvent::query()
             ->where('advisor_id', $advisorId)
             ->where('is_active', 1)
@@ -289,12 +302,10 @@ class AgendaController extends Controller
             'reason' => ($e->visibility === 'public')
                 ? (strtoupper((string)$e->type).': '.(string)$e->title)
                 : 'Ocupado',
-            'kind'   => 'event',
         ]);
 
         $calendar = [];
 
-        // Itera día por día del rango
         $period = CarbonPeriod::create($startDate, '1 day', $endDate->copy()->subDay());
         foreach ($period as $day) {
             $weekday = (int) $day->dayOfWeek;
@@ -303,22 +314,21 @@ class AgendaController extends Controller
 
             foreach ($ranges as $r) {
                 $slotMinutes = (int) $r->slot_minutes;
+
                 $rangeStart = Carbon::parse($day->toDateString().' '.$r->start_time);
                 $rangeEnd   = Carbon::parse($day->toDateString().' '.$r->end_time);
 
                 for ($t = $rangeStart->copy(); $t->lt($rangeEnd); $t->addMinutes($slotMinutes)) {
                     $slotStart = $t->copy();
-                    $slotEnd   = $t->copy()->addMinutes($duration);
+                    $slotEnd   = $t->copy()->addMinutes($minutes);
 
                     if ($slotEnd->gt($rangeEnd)) continue;
                     if ($slotStart->lte(now())) continue;
 
-                    // ¿Choca con cita?
                     $isReserved = $busyIntervals->contains(fn($b) =>
                         $slotStart->lt($b['end']) && $slotEnd->gt($b['start'])
                     );
 
-                    // ¿Choca con evento?
                     $eventHit = $eventIntervals->first(fn($e) =>
                         $slotStart->lt($e['end']) && $slotEnd->gt($e['start'])
                     );
@@ -329,12 +339,10 @@ class AgendaController extends Controller
                             'start' => $slotStart->toIso8601String(),
                             'end'   => $slotEnd->toIso8601String(),
                             'display' => 'block',
-                            'backgroundColor' => '#FEE2E2',
-                            'borderColor' => '#EF4444',
-                            'textColor' => '#7F1D1D',
                             'extendedProps' => [
+                                'kind' => 'reserved',
                                 'blocked' => true,
-                                'reason'  => 'Reservado',
+                                'reason' => 'Reservado',
                             ],
                         ];
                         continue;
@@ -346,28 +354,23 @@ class AgendaController extends Controller
                             'start' => $slotStart->toIso8601String(),
                             'end'   => $slotEnd->toIso8601String(),
                             'display' => 'block',
-                            'backgroundColor' => '#DBEAFE',
-                            'borderColor' => '#3B82F6',
-                            'textColor' => '#1E3A8A',
                             'extendedProps' => [
+                                'kind' => 'event',
                                 'blocked' => true,
-                                'reason'  => $eventHit['reason'],
+                                'reason' => $eventHit['reason'],
                             ],
                         ];
                         continue;
                     }
 
-                    // Disponible
                     $calendar[] = [
                         'title' => 'Disponible',
                         'start' => $slotStart->toIso8601String(),
                         'end'   => $slotEnd->toIso8601String(),
                         'display' => 'block',
-                        'backgroundColor' => '#DCFCE7',
-                        'borderColor' => '#22C55E',
-                        'textColor' => '#14532D',
                         'extendedProps' => [
-                            'blocked'   => false,
+                            'kind' => 'available',
+                            'blocked' => false,
                             'starts_at' => $slotStart->toDateTimeString(),
                             'ends_at'   => $slotEnd->toDateTimeString(),
                         ],

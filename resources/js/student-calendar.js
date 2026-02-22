@@ -1,117 +1,89 @@
-import { Calendar } from '@fullcalendar/core'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import esLocale from '@fullcalendar/core/locales/es'
+import { Calendar } from '@fullcalendar/core';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const el = document.getElementById('studentCalendar')
-  if (!el) return
-
-  // ⚠️ Ajusta estos IDs a tus selects reales (los que ya tienes en tu agenda.blade.php)
-  const serviceSelect = document.getElementById('service_id')
-  const advisorSelect = document.getElementById('advisor_id')
-
-  // Inputs ocultos del form de reserva (si ya los tienes)
-    const fStarts = document.getElementById('f_starts_at')
-    const fEnds = document.getElementById('f_ends_at')
+  const el = document.getElementById('studentCalendar');
+  if (!el) return;
 
   const calendar = new Calendar(el, {
     plugins: [timeGridPlugin, interactionPlugin],
     initialView: 'timeGridWeek',
-    locale: esLocale,
-    slotLabelFormat: {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    },
-    eventTimeFormat: {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    },
-    height: 'auto',
-    nowIndicator: true,
-    allDaySlot: false,
-    slotMinTime: '07:00:00',
+    locale: 'es',
+    timeZone: 'America/Lima',
+
+    slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+
+    // rango visible (puedes subir/bajar)
+    slotMinTime: '06:00:00',
     slotMaxTime: '22:00:00',
-    firstDay: 1, // lunes
+
+    allDaySlot: false,
+    nowIndicator: true,
+    height: 'auto',
+    expandRows: true,
+
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
       right: 'timeGridWeek,timeGridDay'
     },
 
-    // Feed dinámico
     events: async (info, success, failure) => {
-      const serviceId = serviceSelect?.value
-      const advisorId = advisorSelect?.value
-      if (!serviceId || !advisorId) {
-        success([])
-        return
-      }
-
-      const url = `/plataforma/agenda/feed?service_id=${serviceId}&advisor_id=${advisorId}&start=${info.startStr.slice(0,10)}&end=${info.endStr.slice(0,10)}`
       try {
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } })
-        const data = await res.json()
-        success(data)
+        const state = window.__agendaState ? window.__agendaState() : {};
+        if (!state.service_id || !state.advisor_id || !state.session_number) {
+          success([]);
+          return;
+        }
+
+        const url = new URL(window.location.origin + '/plataforma/agenda/feed');
+        url.searchParams.set('start', info.startStr);
+        url.searchParams.set('end', info.endStr);
+        url.searchParams.set('service_id', state.service_id);
+        url.searchParams.set('advisor_id', state.advisor_id);
+        url.searchParams.set('session_number', state.session_number);
+
+        const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+
+        const mapped = (data || []).map(ev => {
+          const kind = ev?.extendedProps?.kind;
+
+          if (kind === 'available') {
+            return { ...ev, backgroundColor: '#DCFCE7', borderColor: '#22C55E', textColor: '#14532D' };
+          }
+          if (kind === 'reserved') {
+            return { ...ev, backgroundColor: '#FEE2E2', borderColor: '#EF4444', textColor: '#7F1D1D' };
+          }
+          if (kind === 'event') {
+            return { ...ev, backgroundColor: '#DBEAFE', borderColor: '#3B82F6', textColor: '#1E3A8A' };
+          }
+
+          return ev;
+        });
+
+        success(mapped);
       } catch (e) {
-        failure(e)
+        failure(e);
       }
     },
 
-    eventClick: (arg) => {
-        const blocked = !!arg.event.extendedProps.blocked
-        if (blocked) return
+    eventClick: (info) => {
+      const kind = info.event.extendedProps?.kind;
 
-        const starts_at = arg.event.extendedProps.starts_at
-        const ends_at = arg.event.extendedProps.ends_at
+      if (kind !== 'available') return;
 
-        // Inputs hidden reales de tu blade
-        const fService = document.getElementById('f_service_id')
-        const fAdvisor = document.getElementById('f_advisor_id')
-        const fDate = document.getElementById('f_date')
-        const fStarts = document.getElementById('f_starts_at')
-        const fEnds = document.getElementById('f_ends_at')
+      const starts_at = info.event.extendedProps?.starts_at;
+      const ends_at = info.event.extendedProps?.ends_at;
 
-        // Labels del panel derecho
-        const dService = document.getElementById('d_service')
-        const dAdvisor = document.getElementById('d_advisor')
-        const dTime = document.getElementById('d_time')
+      if (starts_at && ends_at && window.__pickSlot) {
+        window.__pickSlot(starts_at, ends_at);
+      }
+    }
+  });
 
-        const serviceSelect = document.getElementById('service_id')
-        const advisorSelect = document.getElementById('advisor_id')
-        const btnBook = document.getElementById('btnBook')
-        const sessionSelect = document.getElementById('session_number')
-
-        // Guarda selección en hidden inputs
-        if (fService) fService.value = serviceSelect?.value || ''
-        if (fAdvisor) fAdvisor.value = advisorSelect?.value || ''
-        if (fStarts) fStarts.value = starts_at || ''
-        if (fEnds) fEnds.value = ends_at || ''
-
-        // date (YYYY-MM-DD) para tu form
-        const startDate = (starts_at || '').slice(0, 10)
-        if (fDate) fDate.value = startDate
-
-        // Muestra en panel derecho
-        const serviceLabel = serviceSelect?.options?.[serviceSelect.selectedIndex]?.text || '—'
-        const advisorLabel = advisorSelect?.options?.[advisorSelect.selectedIndex]?.text || '—'
-        if (dService) dService.textContent = serviceLabel
-        if (dAdvisor) dAdvisor.textContent = advisorLabel
-        if (dTime) dTime.textContent = `${startDate} | ${arg.event.start.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${arg.event.end.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })}`
-
-        // Habilitar reservar solo si ya eligió sesión
-        if (btnBook && sessionSelect) {
-            btnBook.disabled = !(sessionSelect.value && fStarts.value && fEnds.value)
-        }
-        },
-
-  })
-
-  calendar.render()
-
-  // Refrescar si cambian selects
-  serviceSelect?.addEventListener('change', () => calendar.refetchEvents())
-  advisorSelect?.addEventListener('change', () => calendar.refetchEvents())
-})
+  calendar.render();
+  window.studentCalendar = calendar;
+});

@@ -24,7 +24,7 @@
 
       <div class="field">
         <label>Sesiones</label>
-        <input class="input" type="number" name="sessions" value="{{ old('sessions', $service->sessions_count) }}">
+        <input class="input" type="number" name="sessions_count" value="{{ old('sessions_count', $service->sessions_count) }}">
       </div>
 
       <div class="field">
@@ -52,12 +52,12 @@
 
       <div class="field" style="grid-column: 1 / -1;">
         <label>Lo que incluye / implica (1 ítem por línea)</label>
-        <textarea class="input" name="includes" rows="5">{{ old('includes', implode("\n", $service->includes ?? [])) }}</textarea>
+        <textarea class="input" name="includes_text" rows="5">{{ old('includes_text', implode("\n", $service->includes ?? [])) }}</textarea>
       </div>
 
       <div class="field" style="grid-column: 1 / -1;">
         <label>Objetivos (1 ítem por línea)</label>
-        <textarea class="input" name="objectives" rows="5">{{ old('objectives', implode("\n", $service->objectives ?? [])) }}</textarea>
+        <textarea class="input" name="objectives_text" rows="5">{{ old('objectives_text', implode("\n", $service->objectives ?? [])) }}</textarea>
       </div>
 
       <div class="field">
@@ -83,6 +83,40 @@
       <button class="btn btn-primary" type="submit">Actualizar</button>
       <a class="btn btn-ghost" href="{{ route('admin.services.index') }}">Cancelar</a>
     </div>
+
+    <div class="mt-6 bg-white border border-slate-200 rounded-xl p-5">
+      <div class="font-semibold mb-3">Duración por sesión</div>
+      <p class="text-sm text-slate-500 mb-4">
+        Define la duración (en minutos) de cada sesión del servicio. Debe haber una duración para cada sesión (1..N).
+      </p>
+
+      @php
+        $existing = isset($service)
+          ? $service->sessions->keyBy('session_number')
+          : collect();
+      @endphp
+
+      <div id="sessionsBox" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {{-- se rellena con JS --}}
+      </div>
+
+      <p class="text-xs text-slate-500 mt-3">
+        Recomendado: 45 / 60 / 90 / 120 min.
+      </p>
+    </div>
+
+    {{-- manda JSON a JS (solo si existe $service) --}}
+    <script>
+      window.__serviceSessions = @json(
+        isset($service)
+          ? $service->sessions->map(fn($x)=>[
+              'session_number'=>$x->session_number,
+              'duration_minutes'=>$x->duration_minutes
+            ])->values()
+          : []
+      );
+    </script>
+
 
   </form>
 </div>
