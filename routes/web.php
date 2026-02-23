@@ -17,6 +17,7 @@ use App\Http\Controllers\Student\AgendaController;
 use App\Http\Controllers\Admin\AdvisorController;
 use App\Http\Controllers\Admin\AdvisorAvailabilityController;
 use \App\Http\Controllers\Admin\AdvisorEventController;
+use App\Http\Controllers\Admin\AdminAppointmentCalendarController;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
@@ -56,7 +57,10 @@ Route::middleware(['auth', 'role:administrador'])
         Route::resource('advisors', AdvisorController::class)->except(['show']);
         Route::get('advisors/{advisor}/availability', [AdvisorAvailabilityController::class, 'edit'])->name('advisors.availability.edit');
         Route::post('advisors/{advisor}/availability', [AdvisorAvailabilityController::class, 'update'])->name('advisors.availability.update');
-        
+        Route::get('appointments/calendar', [AdminAppointmentCalendarController::class, 'index'])->name('appointments.calendar');
+        Route::get('appointments/calendar/feed', [AdminAppointmentCalendarController::class, 'feed'])->name('appointments.calendar.feed');
+        Route::patch('appointments/{appointment}/status', [AdminAppointmentCalendarController::class, 'updateStatus'])->name('appointments.status');
+        Route::patch('appointments/{appointment}/payment', [AdminAppointmentCalendarController::class, 'updatePayment'])->name('appointments.payment');
     });
 
 // ===============================

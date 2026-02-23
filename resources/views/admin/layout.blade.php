@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Portal Admin</title>
   <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
 </head>
@@ -91,6 +92,10 @@
           </a>
         @endif
 
+        <a href="{{ route('admin.appointments.calendar') }}" class="nav-link">
+          Reservas (Calendario)
+        </a>
+
       </nav>
 
       <div class="sidebar-footer">
@@ -153,6 +158,7 @@
     </main>
 
   </div>
+  @stack('scripts')
 
   <script src="{{ asset('js/admin.js') }}" defer></script>
 </body>
