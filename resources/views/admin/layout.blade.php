@@ -158,8 +158,7 @@
     </main>
 
   </div>
-  @stack('scripts')
-
   <script src="{{ asset('js/admin.js') }}" defer></script>
+  @stack('scripts')
 </body>
 </html>

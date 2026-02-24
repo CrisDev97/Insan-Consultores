@@ -34,4 +34,8 @@ class Appointment extends Model
     public function service() { return $this->belongsTo(Service::class); }
     public function advisor() { return $this->belongsTo(Advisor::class); }
     public function student() { return $this->belongsTo(User::class, 'student_user_id'); }
+    public function payments()
+    {
+        return $this->hasMany(\App\Models\AppointmentPayment::class);
+    }
 }

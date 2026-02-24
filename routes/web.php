@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:administrador'])
         Route::get('appointments/calendar/feed', [AdminAppointmentCalendarController::class, 'feed'])->name('appointments.calendar.feed');
         Route::patch('appointments/{appointment}/status', [AdminAppointmentCalendarController::class, 'updateStatus'])->name('appointments.status');
         Route::patch('appointments/{appointment}/payment', [AdminAppointmentCalendarController::class, 'updatePayment'])->name('appointments.payment');
+        Route::get('appointments/{appointment}/payments', [AdminAppointmentCalendarController::class, 'payments'])->name('appointments.payments');
     });
 
 // ===============================
